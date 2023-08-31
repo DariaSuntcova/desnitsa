@@ -1,0 +1,48 @@
+stages:
+    - build
+    - deploy
+
+stage_build:
+    stage: build
+    tags:
+        - gitlab-shell
+    script:
+        - export PATH=$PATH:/opt/gradle/gradle-8.1.1/bin
+        - gradle clean
+        - gradle bootBuildImage
+        - echo "$CR_TOKEN" | docker login --username $CR_USER --password-stdin $CI_REGISTRY
+        - docker build -t registry.gitlab.com/god15/projects-new/desnitsa/backend .
+        - docker push registry.gitlab.com/god15/projects-new/desnitsa/backend
+        - docker logout $CI_REGISTRY
+        - rm -fr ~/builds/*
+        - docker system prune -af
+
+
+stage_deploy:
+    stage: deploy
+    tags:
+        - ff_server
+    before_script:
+        - 'command -v ssh-agent >/dev/null || ( apk add --update openssh )' 
+        - eval $(ssh-agent -s)
+        - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+        - mkdir -p ~/.ssh
+        - chmod 600 ~/.ssh
+        - ssh-keyscan $SERVER_ADDRESS >> ~/.ssh/known_hosts
+        - chmod 644 ~/.ssh/known_hosts
+    script:
+        - ssh $SERVER_USERNAME@$SERVER_ADDRESS "
+            cd $BASE_DIR &&
+            if ! [ -d "$CI_PROJECT_NAME" ];
+                then
+                    git clone https://$CR_USER:$CR_TOKEN@gitlab.com/god15/projects-new/desnitsa/backend.git -b $CI_COMMIT_BRANCH;
+            fi &&
+            cd $CI_PROJECT_NAME &&
+            git checkout $CI_COMMIT_BRANCH &&
+            git pull &&
+            echo "$CR_TOKEN" | docker login --username $CR_USER --password-stdin $CI_REGISTRY &&
+            docker pull registry.gitlab.com/god15/projects-new/desnitsa/backend &&
+            docker compose -f docker-compose.yml up --build -d &&
+            docker system prune -af &&
+            docker logout $CI_REGISTRY"
+

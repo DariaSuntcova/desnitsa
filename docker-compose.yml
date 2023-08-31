@@ -1,0 +1,22 @@
+version: "3.8"
+services:
+  backend:
+    depends_on:
+      - postgres
+    image: registry.gitlab.com/god15/projects-new/desnitsa/backend
+    container_name: "desnitsa_backend"
+    ports:
+      - 9090:9090
+    environment:
+      - BPL_JVM_THREAD_COUNT=50
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/postgres_db
+
+  postgres:
+    image: "postgres:15"
+    container_name: "desnitsa_postgres"
+    ports:
+      - 6455:5432
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=postgres_db

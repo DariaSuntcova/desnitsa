@@ -1,5 +1,7 @@
-# desnitsa
+
 ## Бэкенд для сайта Центра по работе с глухими и слабослышащими «Десница».
+[Презентация проекта](https://www.behance.net/gallery/176869017/desnica)
+
 REST-сервис с использованием Java 17, Spring Boot 2.7, Spring JDBC, Spring Security(SCRF токен), PostgreSQL, JUnit 5, Mockito, Flyway, Docker
 
 ### Основной стек:
